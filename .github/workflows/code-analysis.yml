@@ -1,0 +1,56 @@
+name: Code Analysis
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare log directory
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          npm ci --loglevel verbose 2>&1 | tee logs/npm-ci.log
+
+      - name: TypeScript diagnostics
+        run: |
+          set -euxo pipefail
+          npx tsc --noEmit 2>&1 | tee logs/typescript.log
+
+      - name: ESLint deep scan
+        run: |
+          set -euxo pipefail
+          npx eslint . --ext .ts,.tsx --max-warnings=0 2>&1 | tee logs/eslint.log
+
+      - name: Upload analysis logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-analysis-logs-${{ github.run_id }}
+          path: logs
+          if-no-files-found: warn
