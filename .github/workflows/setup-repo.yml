@@ -10,6 +10,8 @@ jobs:
   setup-info:
     name: Configuration Setup Information
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - name: Repository Configuration Status
