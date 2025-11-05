@@ -1,7 +1,8 @@
 # GitHub Copilot Configuration
 
-# This file enables GitHub Copilot for this repository
-# Copilot will provide AI-powered code suggestions and completions
+# This file documents GitHub Copilot configuration for this repository
+# Note: Copilot must be enabled through GitHub organization/repository settings
+# This file provides documentation and guidance only
 
 # Features enabled:
 # - Code completions

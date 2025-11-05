@@ -6,27 +6,43 @@
 #
 # Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
+# IMPORTANT: Replace the team references below with actual GitHub usernames or team names
+# The following team names are placeholders and should be updated:
+# - @shiftby-pro/developers
+# - @shiftby-pro/devops
+# - @shiftby-pro/ops
+# - @shiftby-pro/qa-team
+# - @shiftby-pro/security
+# - @shiftby-pro/documentation
+# - @shiftby-pro/frontend-team
+# - @shiftby-pro/backend-team
+
 # Default owners for everything in the repo
 # These owners will be requested for review unless a later match takes precedence
-* @shiftby-pro/developers
+# TODO: Replace with actual GitHub usernames or team names
+# * @shiftby-pro/developers
 
 # GitHub configuration files
-/.github/ @shiftby-pro/devops
-/.github/workflows/ @shiftby-pro/devops
-/.github/environments/ @shiftby-pro/ops
+# TODO: Replace with actual GitHub usernames or team names
+# /.github/ @shiftby-pro/devops
+# /.github/workflows/ @shiftby-pro/devops
+# /.github/environments/ @shiftby-pro/ops
 
 # Environment-specific configurations
-/.github/environments/dev.md @shiftby-pro/developers
-/.github/environments/qa.md @shiftby-pro/qa-team
-/.github/environments/production.md @shiftby-pro/ops
+# TODO: Replace with actual GitHub usernames or team names
+# /.github/environments/dev.md @shiftby-pro/developers
+# /.github/environments/qa.md @shiftby-pro/qa-team
+# /.github/environments/production.md @shiftby-pro/ops
 
 # Security and compliance
-/.github/workflows/codeql.yml @shiftby-pro/security
-/.github/RULESETS.md @shiftby-pro/security @shiftby-pro/devops
+# TODO: Replace with actual GitHub usernames or team names
+# /.github/workflows/codeql.yml @shiftby-pro/security
+# /.github/RULESETS.md @shiftby-pro/security @shiftby-pro/devops
 
 # Documentation
-*.md @shiftby-pro/documentation
-/docs/ @shiftby-pro/documentation
+# TODO: Replace with actual GitHub usernames or team names
+# *.md @shiftby-pro/documentation
+# /docs/ @shiftby-pro/documentation
 
 # Add your project-specific paths here:
 # /src/ @shiftby-pro/frontend-team
