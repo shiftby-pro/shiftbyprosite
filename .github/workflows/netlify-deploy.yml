@@ -1,14 +1,11 @@
 name: Netlify Deployment
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-  pull_request:
-    branches:
-      - main
-      - dev
+  workflow_run:
+    workflows:
+      - CodeQL
+    types:
+      - completed
   workflow_dispatch:
 
 defaults:
@@ -17,13 +14,22 @@ defaults:
 
 jobs:
   deploy:
+    if: >-
+      ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+            (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'dev')) ||
+          github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     environment:
       name: production
+    env:
+      TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -54,14 +60,20 @@ jobs:
           npm install -g netlify-cli@17 2>&1 | tee logs/netlify-cli-install.log
 
       - name: Deploy to Netlify
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: env.TARGET_BRANCH == 'main'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NETLIFY_DEPLOY_MESSAGE: GitHub Actions deploy ${{ github.sha }}
+          NETLIFY_DEPLOY_MESSAGE: GitHub Actions deploy ${{ env.TARGET_SHA }}
         run: |
           set -euxo pipefail
           netlify deploy --prod --build --message "$NETLIFY_DEPLOY_MESSAGE" --json 2>&1 | tee logs/netlify-deploy.log
+
+      - name: Record deferred deployment
+        if: env.TARGET_BRANCH != 'main'
+        run: |
+          set -euxo pipefail
+          echo "Skipping production deploy for branch '${{ env.TARGET_BRANCH }}'" | tee logs/netlify-deploy.log
 
       - name: Upload deployment logs
         if: always()

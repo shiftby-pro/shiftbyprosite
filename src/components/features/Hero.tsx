@@ -62,7 +62,7 @@ export default function Hero() {
               >
                 Transform Your Workflow with{' '}
                 <Box component="span" sx={{ color: '#fbbf24' }}>
-                  AI Intelligence
+                  AI Intelligence For Business
                 </Box>
               </Typography>
               
