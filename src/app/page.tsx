@@ -14,7 +14,7 @@ export default function Home() {
       <Header />
       <Box component="main">
         <Hero />
-        <Features />S22
+        <Features />Hero Section
         <HowItWorks />
         <CTA />
       </Box>
