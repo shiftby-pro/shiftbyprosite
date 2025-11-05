@@ -1,0 +1,114 @@
+name: "Setup Repository Configuration"
+
+# This workflow helps set up the repository with the necessary configurations
+# Run this manually after the repository is created to initialize environments
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-info:
+    name: Configuration Setup Information
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Repository Configuration Status
+      run: |
+        echo "# Repository Configuration Setup"
+        echo ""
+        echo "## Automated Configurations"
+        echo "The following are configured automatically by this repository:"
+        echo "- ✅ CodeQL Security Scanning"
+        echo "- ✅ Automated Code Review Workflow"
+        echo "- ✅ Deployment Workflows (dev, qa, production)"
+        echo "- ✅ GitHub Copilot Integration"
+        echo ""
+        echo "## Manual Configuration Required"
+        echo "The following need to be configured manually in GitHub Settings:"
+        echo ""
+        echo "### 1. Create Branches"
+        echo "Create the following branches if they don't exist:"
+        echo "   - dev"
+        echo "   - qa"
+        echo "   - main (should already exist)"
+        echo ""
+        echo "### 2. Setup Environments"
+        echo "Go to Settings → Environments and create:"
+        echo "   - development (no protection rules)"
+        echo "   - qa (1 required reviewer from QA team)"
+        echo "   - production (2 required reviewers from ops team)"
+        echo ""
+        echo "### 3. Setup Branch Protection Rulesets"
+        echo "Go to Settings → Rules → Rulesets and create rulesets using"
+        echo "the JSON configurations in .github/RULESETS.md"
+        echo ""
+        echo "### 4. Enable GitHub Advanced Security (if available)"
+        echo "Go to Settings → Code security and analysis:"
+        echo "   - Enable Dependency graph"
+        echo "   - Enable Dependabot alerts"
+        echo "   - Enable Dependabot security updates"
+        echo "   - Enable CodeQL scanning (already configured via workflow)"
+        echo "   - Enable Secret scanning"
+        echo ""
+        echo "### 5. Enable GitHub Copilot"
+        echo "Ensure GitHub Copilot is enabled for the organization/repository"
+        echo ""
+        echo "## Documentation"
+        echo "See .github/README.md for detailed configuration documentation"
+        
+    - name: Create Setup Checklist
+      run: |
+        cat << 'EOF' > setup-checklist.md
+        # Repository Setup Checklist
+        
+        Use this checklist to ensure all configurations are properly set up:
+        
+        ## Branches
+        - [ ] `dev` branch created
+        - [ ] `qa` branch created
+        - [ ] `main` branch exists (default)
+        
+        ## GitHub Environments
+        - [ ] `development` environment created
+        - [ ] `qa` environment created with 1 required reviewer
+        - [ ] `production` environment created with 2 required reviewers
+        
+        ## Branch Protection Rulesets
+        - [ ] Dev branch ruleset applied (see .github/RULESETS.md)
+        - [ ] QA branch ruleset applied (see .github/RULESETS.md)
+        - [ ] Main branch ruleset applied (see .github/RULESETS.md)
+        
+        ## Security Features
+        - [ ] CodeQL workflow enabled (automatic via .github/workflows/codeql.yml)
+        - [ ] Dependency graph enabled
+        - [ ] Dependabot alerts enabled
+        - [ ] Dependabot security updates enabled
+        - [ ] Secret scanning enabled
+        
+        ## Code Review
+        - [ ] Code review workflow enabled (automatic via .github/workflows/code-review.yml)
+        
+        ## GitHub Copilot
+        - [ ] GitHub Copilot enabled for repository/organization
+        - [ ] Team members have Copilot licenses
+        
+        ## Testing
+        - [ ] Test pull request to `dev` branch
+        - [ ] Verify CodeQL runs on pull request
+        - [ ] Verify code review runs on pull request
+        - [ ] Test promotion from dev → qa
+        - [ ] Test promotion from qa → main
+        
+        ## Documentation
+        - [ ] Team reviewed .github/README.md
+        - [ ] Team understands the workflow: feature → dev → qa → main
+        EOF
+        
+        echo "Checklist created in setup-checklist.md"
+        cat setup-checklist.md
+        
+    - name: Upload Setup Checklist
+      uses: actions/upload-artifact@v3
+      with:
+        name: setup-checklist
+        path: setup-checklist.md

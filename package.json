@@ -1,0 +1,22 @@
+{
+  "name": "shiftbyprosite",
+  "version": "1.0.0",
+  "description": "Enterprise-ready repository with automated workflows and multi-environment deployment",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"No tests specified yet\" && exit 0",
+    "lint": "echo \"No linting configured yet\" && exit 0",
+    "build": "echo \"No build configured yet\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shiftby-pro/shiftbyprosite.git"
+  },
+  "keywords": [
+    "automation",
+    "ci-cd",
+    "github-actions"
+  ],
+  "author": "ShiftBy Pro",
+  "license": "ISC"
+}

@@ -1,0 +1,34 @@
+# Code Owners Configuration
+# 
+# This file defines code ownership for the repository.
+# Code owners are automatically requested for review when someone opens a pull request
+# that modifies code that they own.
+#
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for everything in the repo
+# These owners will be requested for review unless a later match takes precedence
+* @shiftby-pro/developers
+
+# GitHub configuration files
+/.github/ @shiftby-pro/devops
+/.github/workflows/ @shiftby-pro/devops
+/.github/environments/ @shiftby-pro/ops
+
+# Environment-specific configurations
+/.github/environments/dev.md @shiftby-pro/developers
+/.github/environments/qa.md @shiftby-pro/qa-team
+/.github/environments/production.md @shiftby-pro/ops
+
+# Security and compliance
+/.github/workflows/codeql.yml @shiftby-pro/security
+/.github/RULESETS.md @shiftby-pro/security @shiftby-pro/devops
+
+# Documentation
+*.md @shiftby-pro/documentation
+/docs/ @shiftby-pro/documentation
+
+# Add your project-specific paths here:
+# /src/ @shiftby-pro/frontend-team
+# /api/ @shiftby-pro/backend-team
+# /infrastructure/ @shiftby-pro/devops
