@@ -1,0 +1,75 @@
+name: Code Review
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  eslint-pr-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare log directory
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          npm ci --loglevel verbose 2>&1 | tee logs/npm-ci.log
+
+      - name: Collect ESLint diagnostics
+        id: eslint_logs
+        run: |
+          set -eu
+          mkdir -p logs
+          set +e
+          npx eslint . --ext .ts,.tsx --format json > logs/eslint.json 2> logs/eslint-json.stderr
+          eslint_status=$?
+          set -o pipefail
+          npx eslint . --ext .ts,.tsx --format stylish 2>&1 | tee logs/eslint-stylish.log
+          set +o pipefail
+          set -e
+          echo "status=${eslint_status}" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Install reviewdog
+        env:
+          REVIEWDOG_VERSION: v0.21.0
+        run: |
+          set -euxo pipefail
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ./bin "${REVIEWDOG_VERSION}"
+
+      - name: Review with reviewdog
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cat logs/eslint.json | ./bin/reviewdog -f=eslint -name=eslint -reporter=github-pr-review -level=error -filter-mode=added -fail-on-error
+
+      - name: Upload review logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-review-logs-${{ github.run_id }}
+          path: logs
+          if-no-files-found: warn

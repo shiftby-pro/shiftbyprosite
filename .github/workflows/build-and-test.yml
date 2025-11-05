@@ -1,0 +1,62 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  CI: true
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare log directory
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          npm ci --loglevel verbose 2>&1 | tee logs/npm-ci.log
+
+      - name: Run lint
+        run: |
+          set -euxo pipefail
+          npm run lint -- --max-warnings=0 2>&1 | tee logs/lint.log
+
+      - name: Build application
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+          NODE_OPTIONS: "--trace-warnings"
+        run: |
+          set -euxo pipefail
+          npm run build 2>&1 | tee logs/build.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-and-test-logs-${{ github.run_id }}
+          path: logs
+          if-no-files-found: warn
