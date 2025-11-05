@@ -33,7 +33,7 @@ Enterprise-ready repository with automated workflows and multi-environment deplo
 
 4. Wait for automated checks (CodeQL, Code Review)
 
-5. Get approval and merge
+5. Merge (no approval required for solo developer)
 
 ### Deployment Pipeline
 
@@ -57,7 +57,8 @@ See [`.github/README.md`](.github/README.md) for detailed information about:
 Please follow the development workflow outlined above. All pull requests require:
 - Passing CodeQL security checks
 - Automated code review
-- At least 1 approval (2 for production)
+- Production (main branch) requires 2 approvals including code owner
+- Dev and QA branches: No approval required (solo developer workflow)
 
 ## License
 

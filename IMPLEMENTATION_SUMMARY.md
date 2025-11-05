@@ -18,8 +18,8 @@ This document summarizes the implementation of the repository configuration as r
 
 **Rulesets Documentation:**
 - `.github/RULESETS.md` - Comprehensive branch protection rulesets for all environments
-  - Dev branch: 1 approval required, CodeQL checks
-  - QA branch: 1 approval required, CodeQL + Code Review checks
+  - Dev branch: No approval required (solo developer), CodeQL + Code Review checks
+  - QA branch: No approval required (solo developer), CodeQL + Code Review checks
   - Main branch: 2 approvals required (incl. code owner), CodeQL + Code Review checks
 
 ### ✅ 2. Enabled CodeQL
@@ -147,9 +147,9 @@ feature branch → dev → qa → main (production)
 ```
 
 1. Developer creates feature branch from `dev`
-2. Opens PR to `dev` (requires 1 approval + CodeQL)
+2. Opens PR to `dev` (requires CodeQL + Code Review checks)
 3. Merges to `dev` → auto-deploys to development environment
-4. Creates PR from `dev` to `qa` (requires 1 approval + checks)
+4. Creates PR from `dev` to `qa` (requires CodeQL + Code Review checks)
 5. Merges to `qa` → auto-deploys to QA environment
 6. Creates PR from `qa` to `main` (requires 2 approvals + code owner + checks)
 7. Merges to `main` → auto-deploys to production environment

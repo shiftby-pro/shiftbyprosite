@@ -63,11 +63,12 @@ Rulesets are documented in `RULESETS.md`. To apply them:
 3. Use the JSON configurations provided in RULESETS.md
 
 ### Dev Branch Rules
-- 1 approving review required
+- No approval required (solo developer)
 - CodeQL must pass
+- Code Review must pass
 
 ### QA Branch Rules
-- 1 approving review required
+- No approval required (solo developer)
 - CodeQL and Code Review must pass
 
 ### Main Branch Rules

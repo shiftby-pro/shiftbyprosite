@@ -29,8 +29,8 @@ git push origin feature/your-feature-name
 ```bash
 # After dev testing is complete
 # Create PR from dev → qa in GitHub UI
-# Get QA approval
-# Merge
+# Wait for checks to pass (CodeQL, Code Review)
+# Merge (no approval required for solo developer)
 ```
 
 ### Deploying to Production
@@ -45,8 +45,8 @@ git push origin feature/your-feature-name
 
 | Branch | Required Approvals | Required Checks |
 |--------|-------------------|-----------------|
-| dev    | 1                 | CodeQL          |
-| qa     | 1 (QA team)       | CodeQL, Code Review |
+| dev    | None (solo developer) | CodeQL, Code Review |
+| qa     | None (solo developer) | CodeQL, Code Review |
 | main   | 2 (incl. code owner) | CodeQL, Code Review |
 
 ## Workflows

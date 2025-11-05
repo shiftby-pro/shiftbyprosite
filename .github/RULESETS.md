@@ -13,13 +13,13 @@ This document describes the recommended branch protection rules and rulesets for
 ### Dev Branch
 - Development environment
 - Used for integration testing
-- Merges to main require approval
+- No approval required (solo developer workflow)
 - CodeQL analysis enabled
 
 ### QA Branch
 - Quality Assurance environment
 - Used for testing before production
-- Requires testing approval
+- No approval required (solo developer workflow)
 - CodeQL analysis enabled
 
 ## Recommended Rulesets
@@ -38,20 +38,14 @@ This document describes the recommended branch protection rules and rulesets for
   },
   "rules": [
     {
-      "type": "pull_request",
-      "parameters": {
-        "required_approving_review_count": 1,
-        "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": false,
-        "require_last_push_approval": false
-      }
-    },
-    {
       "type": "required_status_checks",
       "parameters": {
         "required_status_checks": [
           {
             "context": "CodeQL"
+          },
+          {
+            "context": "Code Review"
           }
         ],
         "strict_required_status_checks_policy": true
@@ -74,15 +68,6 @@ This document describes the recommended branch protection rules and rulesets for
     }
   },
   "rules": [
-    {
-      "type": "pull_request",
-      "parameters": {
-        "required_approving_review_count": 1,
-        "dismiss_stale_reviews_on_push": true,
-        "require_code_owner_review": false,
-        "require_last_push_approval": false
-      }
-    },
     {
       "type": "required_status_checks",
       "parameters": {

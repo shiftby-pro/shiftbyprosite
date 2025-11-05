@@ -75,11 +75,9 @@ Branch rulesets provide fine-grained control over branch protection:
 - Enforcement status: Active
 - Target branches: `dev`
 - Rules to enable:
-  - ✅ Require a pull request before merging
-    - Required approvals: 1
-    - Dismiss stale pull request approvals when new commits are pushed
   - ✅ Require status checks to pass
     - Add: `CodeQL`
+    - Add: `Code Review / Automated Code Review`
     - Require branches to be up to date before merging
 
 #### For QA Branch:
@@ -87,9 +85,6 @@ Branch rulesets provide fine-grained control over branch protection:
 - Enforcement status: Active
 - Target branches: `qa`
 - Rules to enable:
-  - ✅ Require a pull request before merging
-    - Required approvals: 1
-    - Dismiss stale pull request approvals when new commits are pushed
   - ✅ Require status checks to pass
     - Add: `CodeQL`
     - Add: `Code Review / Automated Code Review`
@@ -235,11 +230,11 @@ feature branch → dev → qa → main (production)
 ```
 
 1. Developers create feature branches from `dev`
-2. PRs to `dev` require 1 approval + passing checks
+2. PRs to `dev` require passing checks (CodeQL, Code Review)
 3. Merged to `dev` triggers automatic deployment to development
-4. PR from `dev` to `qa` requires 1 approval + QA reviewer
+4. PR from `dev` to `qa` requires passing checks (CodeQL, Code Review)
 5. Merged to `qa` triggers automatic deployment to QA environment
-6. PR from `qa` to `main` requires 2 approvals + code owner review
+6. PR from `qa` to `main` requires 2 approvals + code owner review + passing checks
 7. Merged to `main` triggers automatic deployment to production
 
 ## Troubleshooting
