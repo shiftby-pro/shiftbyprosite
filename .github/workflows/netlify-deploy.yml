@@ -6,6 +6,9 @@ on:
       - CodeQL
     types:
       - completed
+  push:
+    branches:
+      - dev
   workflow_dispatch:
 
 defaults:
@@ -17,6 +20,7 @@ jobs:
     if: >-
       ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
             (github.event.workflow_run.head_branch == 'main' || github.event.workflow_run.head_branch == 'dev')) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/dev') ||
           github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     environment:
