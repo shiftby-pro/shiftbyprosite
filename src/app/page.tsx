@@ -14,7 +14,7 @@ export default function Home() {
       <Header />
       <Box component="main">
         <Hero />
-        <Features />This is a new fature for marketing
+        <Features /> Move to Next Gen AI Features
         <HowItWorks />
         <CTA />
       </Box>
