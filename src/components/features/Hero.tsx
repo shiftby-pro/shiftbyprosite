@@ -47,7 +47,7 @@ export default function Hero() {
               >
                 <AutoAwesome sx={{ fontSize: 20 }} />
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  AI-Powered Automation
+                  AI-Powered Automation Ananda
                 </Typography>
               </Box>
               
@@ -62,7 +62,7 @@ export default function Hero() {
               >
                 Transform Your Workflow with{' '}
                 <Box component="span" sx={{ color: '#fbbf24' }}>
-                  AI Intelligence
+                  AI Intelligence For Business Version
                 </Box>
               </Typography>
               
