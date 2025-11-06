@@ -1,0 +1,106 @@
+name: Netlify Deployment
+
+on:
+  workflow_run:
+    workflows:
+      - Build and Test
+      - Code Analysis
+      - CodeQL
+      - Code Review
+    types:
+      - completed
+  workflow_dispatch:
+
+concurrency:
+  group: netlify-${{ github.event.workflow_run.head_repository.full_name || github.repository }}-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' || (
+          github.event_name == 'workflow_run' &&
+          github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.event == 'push' &&
+          github.event.workflow_run.head_branch == 'dev') }}
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    env:
+      TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
+      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_SHA }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare log directory
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          npm ci --loglevel verbose 2>&1 | tee logs/npm-ci.log
+
+      - name: Build application
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          set -euxo pipefail
+          npm run build 2>&1 | tee logs/build.log
+
+      - name: Install Netlify CLI
+        if: env.TARGET_BRANCH == 'dev'
+        run: |
+          set -euxo pipefail
+          npm install -g netlify-cli@17 2>&1 | tee logs/netlify-cli-install.log
+
+      - name: Deploy to Netlify (dev)
+        if: env.TARGET_BRANCH == 'dev'
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_DEV_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: GitHub Actions dev deploy ${{ env.TARGET_SHA }}
+        run: |
+          set -euxo pipefail
+          netlify deploy --prod --build --message "$NETLIFY_DEPLOY_MESSAGE" --site "$NETLIFY_SITE_ID" --json 2>&1 | tee logs/netlify-deploy.json
+
+      - name: Capture deploy metadata
+        if: env.TARGET_BRANCH == 'dev'
+        id: deploy_info
+        run: |
+          set -euxo pipefail
+          if [ -s logs/netlify-deploy.json ]; then
+            DEPLOY_URL=$(jq -r '.deploy_url // empty' logs/netlify-deploy.json)
+            DEPLOY_ID=$(jq -r '.deploy_id // empty' logs/netlify-deploy.json)
+            echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+            echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Record deferred deployment
+        if: env.TARGET_BRANCH != 'dev'
+        run: |
+          set -euxo pipefail
+          echo "No Netlify deployment configured for branch '${{ env.TARGET_BRANCH }}'" | tee logs/netlify-deploy.log
+
+      - name: Upload deployment logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-deploy-logs-${{ github.run_id }}-${{ env.TARGET_BRANCH }}
+          path: logs
+          if-no-files-found: warn
