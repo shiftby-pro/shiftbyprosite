@@ -2,17 +2,14 @@ name: Netlify Deployment Dev
 on:
   workflow_run:
     workflows:
-      - Build and Test
-      - Code Analysis
       - CodeQL
-      - Code Review
     types:
       - completed
   workflow_dispatch:
 
 concurrency:
   group: netlify-${{ github.event.workflow_run.head_repository.full_name || github.repository }}-${{ github.event.workflow_run.head_branch || github.ref_name }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 defaults:
   run:
     shell: bash
@@ -22,6 +19,7 @@ jobs:
     if: >-
       ${{ github.event_name == 'workflow_dispatch' || (
           github.event_name == 'workflow_run' &&
+          github.event.workflow_run.name == 'CodeQL' &&
           github.event.workflow_run.conclusion == 'success' &&
           github.event.workflow_run.event == 'push' &&
           github.event.workflow_run.head_branch == 'dev') }}
