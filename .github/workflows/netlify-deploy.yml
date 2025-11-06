@@ -14,7 +14,6 @@ on:
 concurrency:
   group: netlify-${{ github.event.workflow_run.head_repository.full_name || github.repository }}-${{ github.event.workflow_run.head_branch || github.ref_name }}
   cancel-in-progress: false
-
 defaults:
   run:
     shell: bash
