@@ -14,7 +14,8 @@ export default function Home() {
       <Header />
       <Box component="main">
         <Hero />
-        <Features /> Move to Next Gen AI Features
+        <Features /> New Pull to Move through new QA
+        
         <HowItWorks />
         <CTA />
       </Box>
