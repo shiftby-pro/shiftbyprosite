@@ -1,43 +1,34 @@
-name: Netlify Deployment
+name: Deploy Production
 
 on:
-  workflow_run:
-    workflows:
-      - Build and Test
-      - Code Analysis
-      - CodeQL
-      - Code Review
-    types:
-      - completed
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref (branch, tag, or commit SHA) to deploy
+        required: false
+        default: refs/heads/prod
 
 concurrency:
-  group: netlify-${{ github.event.workflow_run.head_repository.full_name || github.repository }}-${{ github.event.workflow_run.head_branch || github.ref_name }}
+  group: netlify-prod-${{ github.repository }}-${{ inputs.ref != '' && inputs.ref || 'refs/heads/prod' }}
   cancel-in-progress: false
+
 defaults:
   run:
     shell: bash
 
 jobs:
   deploy:
-    if: >-
-      ${{ github.event_name == 'workflow_dispatch' || (
-          github.event_name == 'workflow_run' &&
-          github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.event == 'push' &&
-          github.event.workflow_run.head_branch == 'dev') }}
     runs-on: ubuntu-latest
     environment:
-      name: dev
+      name: production
     env:
-      TARGET_BRANCH: ${{ github.event.workflow_run.head_branch || github.ref_name }}
-      TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      TARGET_REF: ${{ inputs.ref != '' && inputs.ref || 'refs/heads/prod' }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.TARGET_SHA }}
+          ref: ${{ env.TARGET_REF }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -63,23 +54,20 @@ jobs:
           npm run build 2>&1 | tee logs/build.log
 
       - name: Install Netlify CLI
-        if: env.TARGET_BRANCH == 'dev'
         run: |
           set -euxo pipefail
           npm install -g netlify-cli@17 2>&1 | tee logs/netlify-cli-install.log
 
-      - name: Deploy to Netlify (dev)
-        if: env.TARGET_BRANCH == 'dev'
+      - name: Deploy to Netlify Production
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_DEV_SITE_ID }}
-          NETLIFY_DEPLOY_MESSAGE: GitHub Actions dev deploy ${{ env.TARGET_SHA }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_PROD_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: GitHub Actions production deploy ${{ env.TARGET_REF }}
         run: |
           set -euxo pipefail
           netlify deploy --prod --build --message "$NETLIFY_DEPLOY_MESSAGE" --site "$NETLIFY_SITE_ID" --json 2>&1 | tee logs/netlify-deploy.json
 
       - name: Capture deploy metadata
-        if: env.TARGET_BRANCH == 'dev'
         id: deploy_info
         run: |
           set -euxo pipefail
@@ -90,16 +78,10 @@ jobs:
             echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Record deferred deployment
-        if: env.TARGET_BRANCH != 'dev'
-        run: |
-          set -euxo pipefail
-          echo "No Netlify deployment configured for branch '${{ env.TARGET_BRANCH }}'" | tee logs/netlify-deploy.log
-
       - name: Upload deployment logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: netlify-deploy-logs-${{ github.run_id }}-${{ env.TARGET_BRANCH }}
+          name: netlify-prod-logs-${{ github.run_id }}
           path: logs
           if-no-files-found: warn
