@@ -1,0 +1,87 @@
+name: Deploy QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref (branch, tag, or commit SHA) to deploy
+        required: false
+        default: refs/heads/qa
+
+concurrency:
+  group: netlify-qa-${{ github.repository }}-${{ inputs.ref != '' && inputs.ref || 'refs/heads/qa' }}
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: qa
+    env:
+      TARGET_REF: ${{ inputs.ref != '' && inputs.ref || 'refs/heads/qa' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare log directory
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          npm ci --loglevel verbose 2>&1 | tee logs/npm-ci.log
+
+      - name: Build application
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          set -euxo pipefail
+          npm run build 2>&1 | tee logs/build.log
+
+      - name: Install Netlify CLI
+        run: |
+          set -euxo pipefail
+          npm install -g netlify-cli@17 2>&1 | tee logs/netlify-cli-install.log
+
+      - name: Deploy to Netlify QA
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_QA_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: GitHub Actions QA deploy ${{ env.TARGET_REF }}
+        run: |
+          set -euxo pipefail
+          netlify deploy --prod --build --message "$NETLIFY_DEPLOY_MESSAGE" --site "$NETLIFY_SITE_ID" --json 2>&1 | tee logs/netlify-deploy.json
+
+      - name: Capture deploy metadata
+        id: deploy_info
+        run: |
+          set -euxo pipefail
+          if [ -s logs/netlify-deploy.json ]; then
+            DEPLOY_URL=$(jq -r '.deploy_url // empty' logs/netlify-deploy.json)
+            DEPLOY_ID=$(jq -r '.deploy_id // empty' logs/netlify-deploy.json)
+            echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+            echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload deployment logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-qa-logs-${{ github.run_id }}
+          path: logs
+          if-no-files-found: warn
