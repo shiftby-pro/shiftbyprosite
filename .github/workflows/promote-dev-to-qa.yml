@@ -1,0 +1,174 @@
+name: Promote Dev to QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: "Branch or ref to promote from"
+        required: false
+        default: "dev"
+      target_branch:
+        description: "Branch to promote into"
+        required: false
+        default: "qa"
+      title_suffix:
+        description: "Optional suffix for the pull request title"
+        required: false
+        default: ""
+      deploy_ref:
+        description: "Git ref (branch, tag, or commit) to deploy after promotion (defaults to source branch)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    env:
+      SOURCE: ${{ inputs.source_branch || 'dev' }}
+      TARGET: ${{ inputs.target_branch || 'qa' }}
+      TITLE_SUFFIX: ${{ inputs.title_suffix }}
+      PROMOTION_TOKEN: ${{ secrets.PROMOTION_TOKEN }}
+    steps:
+      - name: Validate configuration
+        run: |
+          set -euo pipefail
+          if [ -z "${PROMOTION_TOKEN}" ]; then
+            echo "PROMOTION_TOKEN secret is required for pushing promotion branches." >&2
+            exit 1
+          fi
+          echo "Promoting '${SOURCE}' into '${TARGET}'"
+
+      - name: Checkout source branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ env.PROMOTION_TOKEN }}
+
+      - name: Create promotion branch
+        id: create_branch
+        run: |
+          set -euo pipefail
+          git fetch origin "$SOURCE" "$TARGET"
+          git checkout "origin/$SOURCE"
+          BRANCH="promote-${SOURCE}-to-${TARGET}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git switch -c "$BRANCH"
+          git remote set-url origin "https://x-access-token:${PROMOTION_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push --set-upstream origin "$BRANCH"
+          echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Create pull request
+        id: create_pr
+        uses: actions/github-script@v7
+        env:
+          PROMO_BRANCH: ${{ steps.create_branch.outputs.branch_name }}
+        with:
+          github-token: ${{ env.PROMOTION_TOKEN }}
+          script: |
+            const source = process.env.SOURCE;
+            const target = process.env.TARGET;
+            const branchName = process.env.PROMO_BRANCH;
+            if (!branchName) {
+              core.setFailed('Promotion branch name was not provided.');
+              return;
+            }
+            const suffix = process.env.TITLE_SUFFIX ? ` - ${process.env.TITLE_SUFFIX}` : '';
+            const title = `Promote ${source} to ${target}${suffix}`;
+            const { data } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: branchName,
+              base: target,
+              title,
+              body: `Automatically generated promotion PR to sync \`${source}\` into \`${target}\` from workflow run [#${context.runNumber}](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`
+            });
+            core.setOutput('pr_url', data.html_url);
+            core.setOutput('pr_number', data.number.toString());
+            await core.summary
+              .addHeading('Promotion PR created')
+              .addLink(title, data.html_url)
+              .write();
+
+      - name: Summary
+        run: |
+          echo "Promotion branch created: ${{ steps.create_branch.outputs.branch_name }}"
+          echo "Pull request logged in workflow summary"
+
+  deploy:
+    needs: promote
+    runs-on: ubuntu-latest
+    environment:
+      name: qa
+    env:
+      SOURCE_BRANCH: ${{ inputs.source_branch || 'dev' }}
+      TARGET_REF: ${{ inputs.deploy_ref != '' && inputs.deploy_ref || format('refs/heads/{0}', inputs.source_branch || 'dev') }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_REF }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Prepare log directory
+        run: |
+          set -euxo pipefail
+          mkdir -p logs
+
+      - name: Install dependencies
+        run: |
+          set -euxo pipefail
+          npm ci --loglevel verbose 2>&1 | tee logs/npm-ci.log
+
+      - name: Build application
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          set -euxo pipefail
+          npm run build 2>&1 | tee logs/build.log
+
+      - name: Install Netlify CLI
+        run: |
+          set -euxo pipefail
+          npm install -g netlify-cli@17 2>&1 | tee logs/netlify-cli-install.log
+
+      - name: Deploy to Netlify QA
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_QA_SITE_ID }}
+          NETLIFY_DEPLOY_MESSAGE: Promote ${SOURCE_BRANCH} to QA via workflow ${{ github.run_id }}
+        run: |
+          set -euxo pipefail
+          netlify deploy --prod --build --message "$NETLIFY_DEPLOY_MESSAGE" --site "$NETLIFY_SITE_ID" --json 2>&1 | tee logs/netlify-deploy.json
+
+      - name: Capture deploy metadata
+        id: deploy_info
+        run: |
+          set -euxo pipefail
+          if [ -s logs/netlify-deploy.json ]; then
+            DEPLOY_URL=$(jq -r '.deploy_url // empty' logs/netlify-deploy.json)
+            DEPLOY_ID=$(jq -r '.deploy_id // empty' logs/netlify-deploy.json)
+            echo "deploy_url=$DEPLOY_URL" >> "$GITHUB_OUTPUT"
+            echo "deploy_id=$DEPLOY_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload deployment logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: netlify-qa-logs-${{ github.run_id }}
+          path: logs
+          if-no-files-found: warn
+
+      - name: Summary
+        run: |
+          echo "QA deploy complete for ref '${{ env.TARGET_REF }}'"
+          echo "Deploy URL: ${{ steps.deploy_info.outputs.deploy_url }}"
