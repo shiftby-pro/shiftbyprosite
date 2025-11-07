@@ -15,7 +15,7 @@ export default function Home() {
       <Box component="main">
         <Hero />
         <Features /> 
-        <b>New Pull Request Automatically Created for Developers</b>
+        <b>Change Workflow A to B</b>
         
         <HowItWorks />
         <CTA />
