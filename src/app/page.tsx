@@ -14,7 +14,9 @@ export default function Home() {
       <Header />
       <Box component="main">
         <Hero />
-        <Features />This is a new fature for marketing
+        <Features /> 
+        <b>New Pull Request Automatically Created for Developers</b>
+        
         <HowItWorks />
         <CTA />
       </Box>
