@@ -14,7 +14,7 @@ export default function Home() {
       <Header />
       <Box component="main">
         <Hero />
-        <Features /> New Pull to Move through new QA
+        <Features /> New Pull Automatically
         
         <HowItWorks />
         <CTA />
