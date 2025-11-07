@@ -46,7 +46,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          token: ${{ env.PROMOTION_TOKEN }}
 
       - name: Create promotion branch
         id: create_branch
