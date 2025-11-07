@@ -31,13 +31,13 @@ jobs:
       SOURCE: ${{ inputs.source_branch || 'dev' }}
       TARGET: ${{ inputs.target_branch || 'qa' }}
       TITLE_SUFFIX: ${{ inputs.title_suffix }}
-      PROMOTION_TOKEN: ${{ secrets.PROMOTION_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN  }}
     steps:
       - name: Validate configuration
         run: |
           set -euo pipefail
-          if [ -z "${PROMOTION_TOKEN}" ]; then
-            echo "PROMOTION_TOKEN secret is required for pushing promotion branches." >&2
+          if [ -z "${GITHUB_TOKEN}" ]; then
+            echo "GITHUB_TOKEN secret is required for pushing promotion branches." >&2
             exit 1
           fi
           echo "Promoting '${SOURCE}' into '${TARGET}'"
@@ -55,7 +55,7 @@ jobs:
           git checkout "origin/$SOURCE"
           BRANCH="promote-${SOURCE}-to-${TARGET}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           git switch -c "$BRANCH"
-          git remote set-url origin "https://x-access-token:${PROMOTION_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push --set-upstream origin "$BRANCH"
           echo "branch_name=$BRANCH" >> "$GITHUB_OUTPUT"
 
@@ -65,7 +65,7 @@ jobs:
         env:
           PROMO_BRANCH: ${{ steps.create_branch.outputs.branch_name }}
         with:
-          github-token: ${{ env.PROMOTION_TOKEN }}
+          github-token: ${{ env.GITHUB_TOKEN }}
           script: |
             const source = process.env.SOURCE;
             const target = process.env.TARGET;
