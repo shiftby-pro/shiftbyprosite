@@ -1,4 +1,4 @@
-name: Netlify Deployment Dev
+name: Netlify Deploy Dev
 on:
   workflow_run:
     workflows:

@@ -1,4 +1,4 @@
-name: Deploy Deployment Prod
+name: Netlify Deploy Prod
 
 on:
   workflow_dispatch:
